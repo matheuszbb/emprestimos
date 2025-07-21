@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  CD:    
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd emprestimos/ &&
+            git pull &&
+            docker compose -f docker-compose-portainer.yml up -d --build

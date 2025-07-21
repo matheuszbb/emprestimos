@@ -6,7 +6,7 @@ services:
     image: emprestimos
     command: /bin/sh -c "source /venv/bin/activate && sh ./entrypoint.sh"
     env_file:
-      - env/.env
+      - dotenv_files/.env
     volumes:
       - ./emprestimos:/emprestimos
     restart: always
