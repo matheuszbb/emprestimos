@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+  <link rel="stylesheet" href="{% static 'css/erros.css' %}">
+{% endblock %}
+
+{% block conteudo %}
+  <div class="container text-center flex">
+    <div class="row justify-content-center">
+      <h1>
+        ERRO 415!
+      </h1>
+      <p>
+        Erro 415, Você Esta Tentando Enviar Um Arquivo Indevido Para Essa Página.
+      </p>
+      <p>
+        <a type="button" class="btn btn-outline-warning btn_index d-grid gap-2 col-sm-8 col-md-8 col-lg-5 col-xl-4 col-xxl-4 mx-auto" href="{% url 'index' %}">Quero Retornar ao Início</a>
+      </p>
+    </div>
+  </div>
+
+
+{% endblock %}

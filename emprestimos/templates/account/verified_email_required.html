@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    {% include 'parciais/_messages.html' %}
+
+    <h1 class="titulo_estilizado">{% trans "Verify Your Email Address" %}</h1>
+    <p style="color: white; font-size: larger;">
+      Esta parte do site exige que verifiquemos se você é quem você afirma ser. Para isso, solicitamos que você verifique a propriedade do seu endereço de e-mail.
+    </p>
+    <p style="color: white; font-size: larger;">
+      Enviamos um e-mail para você para verificação. Por favor, clique no link dentro desse e-mail. Se você não vir o e-mail de verificação na sua caixa de entrada principal, verifique sua pasta de spam. De outra forma entre em contato conosco se você não recebê-lo dentro de alguns minutos.
+    </p>
+    <p style="color: white; font-size: larger;">
+      <strong>Observação:</strong> você ainda pode <a style="color: #ec710d;" href="{% url 'account_email' %}">alterar seu endereço de e-mail.</a>
+    </p>
+  </div>
+</div>     
+{% endblock conteudo %}

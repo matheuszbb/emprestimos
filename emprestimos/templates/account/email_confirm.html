@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account %}
+{% load allauth %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    {% include 'parciais/_messages.html' %}
+
+    <h1 class="titulo_estilizado">{% trans "Confirm Email Address" %}</h1>
+    <form method="POST" action="{{ action_url }}">
+      {% csrf_token %}
+      {% if confirmation %}
+        {% user_display confirmation.email_address.user as user_display %}
+        {% if can_confirm %}
+          <p style="color: white; font-size: larger;">
+            Por favor, confirme que <a style="color: #ec710d;" href="mailto:{{ email }}">{{ email }}</a> é um endereço de e-mail para o usuário <span style="color: #A62994;">{{ user_display }}</span>.
+          </p>
+          <input type="submit" class="button btn btn-outline btn_roxo" value="{% trans 'Confirm' %}">
+        {% else %}
+          <p style="color: white; font-size: larger;">
+            Não é possível confirmar {{ email }} porque já está confirmado por uma conta diferente.
+          </p>
+        {% endif %}
+      {% else %}
+        {% url 'account_email' as email_url %}
+        <p style="color: white; font-size: larger;">
+          Este link de confirmação de e-mail expirou ou é inválido. Por favor, <a style="color: #A62994;" href="{{ email_url }}">solicite um novo pedido de confirmação de e-mail</a>.
+        </p>
+      {% endif %}
+    </form>
+  </div>
+</div>  
+
+
+
+<div class="login-wrap">
+    <div class="login-html">
+        <input id="tab-1" type="radio" name="tab" class="login" checked=""><label for="tab-1" class="tab">{% trans "Confirm Email Address" %}</label>
+        <div class="login-form">
+            <div class="login-htm">
+                <form method="POST" action="{{ action_url }}">
+                    {% csrf_token %}
+                    <div class="col-md ms-auto" style="word-wrap: break-word;">
+                      {% include 'parciais/_messages.html' %}
+                    </div>
+                    {% if confirmation %}
+                        {% user_display confirmation.email_address.user as user_display %}
+                        {% if can_confirm %}
+                            <p style="color: white; font-size: larger;">
+                                Por favor, confirme que <a style="color: #ec710d;" href="mailto:{{ email }}">{{ email }}</a> é um endereço de e-mail para o usuário <span style="color: #A62994;">{{ user_display }}</span>.
+                            </p>
+                            <div class="">
+                                <input type="submit" class="button btn btn-outline" value="{% trans 'Confirm' %}" style="padding:15px 20px;width:100%;font-size: 25px;margin-bottom: 15px;border-color: #A62994; color: white;" onmouseover="this.style.backgroundColor='#41003799';" onmouseout="this.style.backgroundColor='';" ontouchstart="this.style.backgroundColor='#41003799';" ontouchend="this.style.backgroundColor='';">
+                            </div>
+                        {% else %}
+                            <p style="color: white; font-size: larger;">
+                                Não é possível confirmar {{ email }} porque já está confirmado por uma conta diferente.
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        {% url 'account_email' as email_url %}
+                        <p style="color: white; font-size: larger;">
+                            Este link de confirmação de e-mail expirou ou é inválido. Por favor, <a style="color: #A62994;" href="{{ email_url }}">solicite um novo pedido de confirmação de e-mail</a>.
+                        </p>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock conteudo %}

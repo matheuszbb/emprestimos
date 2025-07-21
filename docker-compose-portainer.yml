@@ -1,0 +1,26 @@
+services:
+  emprestimos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: emprestimos
+    command: /bin/sh -c "source /venv/bin/activate && sh ./entrypoint.sh"
+    env_file:
+      - env/.env
+    volumes:
+      - ./emprestimos:/emprestimos
+    restart: always
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.emprestimos.rule=Host(`emprestimos.titaniumpy.com`)"
+      - "traefik.http.routers.emprestimos.entrypoints=websecure"
+      - "traefik.http.routers.emprestimos.tls=true"
+      - "traefik.http.routers.emprestimos.tls.certresolver=cloudflare"
+      - "traefik.http.services.emprestimos.loadbalancer.server.port=8000"
+      - "traefik.docker.network=web"
+
+networks:
+  web:
+    external: true

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth account socialaccount %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    {% include 'parciais/_messages.html' %}
+
+    <h1 class="titulo_estilizado">Login</h1>
+    <form method="POST" action="{% url 'account_login' %}">
+      {% csrf_token %}
+      <input type="text" name="login" value="{% if form.login.value != None %}{{ form.login.value }}{% endif %}" class="input" placeholder="E-mail ou Nome de Usuário" required autofocus>
+      <input type="password" id="senha" name="password" class="input" placeholder="Senha" required autofocus>
+      <input id="check" type="checkbox" for="check" onclick="mostrar_senha()" >
+      <label for="check" style="color: #e9e3e3; margin-bottom: 10px;"><span class="icon"></span> Mostrar senha</label>
+      <br>
+      <input id="remember" type="checkbox" name="remember">
+      <label for="remember" style="color: #e9e3e3; margin-bottom: 10px;"><span class="icon"></span> Manter conectado</label>
+
+      <input type="submit" class="button btn btn-outline btn_roxo" value="Logar">
+    </form>
+    <a href="{% url 'account_reset_password' %}">Esqueceu a Senha?</a>
+  </div>
+</div>  
+
+<script>
+    function mostrar_senha() {
+    var x = document.getElementById("senha");
+    if (x.type === "password") {
+      x.type = "text";
+    } else {
+      x.type = "password";
+    }
+  }
+  </script>
+{% endblock conteudo %}

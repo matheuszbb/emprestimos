@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+  <link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    <h1 class="text-center mt-2 mb-4">Bem vindo(a) 😁</h1>
+    
+    <!-- Área de mensagens que será atualizada com HTMX -->
+    <div id="messages">
+      {% include 'parciais/_messages.html' %}
+    </div>
+
+    <form method="POST" action="{% url 'check_subuser' %}" hx-post="{% url 'check_subuser' %}" hx-target="#messages" hx-swap="innerHTML">
+      {% csrf_token %}
+      <input type="text" name="proxy" value="" class="input" placeholder="proxy" required="" autofocus="">
+      <button type="submit" class="button btn btn-outline btn_roxo" hx-indicator="#loading-indicator">
+        <span class="htmx-indicator" id="loading-indicator">
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          Verificando...
+        </span>
+        <span class="button-text">Verificar</span>
+      </button>
+    </form>
+  
+    {% if user.is_staff %}
+      <div class="dasher p-3 rounded mb-4">
+        <div class="d-flex flex-column align-items-center">
+          <form method="POST" action="{% url 'create_subuser' %}" hx-post="{% url 'create_subuser' %}" hx-target="#messages" hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="mb-2 w-100">
+              <label for="q_subuser" class="form-label">Quantidade de SubUsers:</label>
+              <input type="number" id="q_subuser" name="q_subuser" value="1" max="5" min="1" class="input" placeholder="" required="" autofocus="">
+            </div>
+            <div class="mb-2 w-100">
+              <label for="amount" class="form-label">Quantidade de GB:</label>
+              <input type="number" id="amount" name="amount" value="1" max="100" min="0" class="input" placeholder="" required="" autofocus="">
+            </div>
+            <button type="submit" class="btn btn-outline-light mt-3 w-100" hx-indicator="#loading-indicator-create">
+              <span class="htmx-indicator" id="loading-indicator-create">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Criando...
+              </span>
+              <span class="button-text">Criar SubUser</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>  
+
+{% endblock %}

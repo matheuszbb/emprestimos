@@ -1,0 +1,15 @@
+services:
+  emprestimos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: emprestimos
+    command: /bin/sh -c "source /venv/bin/activate && sh ./entrypoint.sh"
+    env_file:
+      - env/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./emprestimos:/emprestimos
+      - ./base_static:/emprestimos/base_static
+    #restart: always

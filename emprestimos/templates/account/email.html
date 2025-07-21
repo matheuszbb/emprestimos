@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load allauth i18n %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    {% include 'parciais/_messages.html' %}
+    {% include 'parciais/_erros_forms.html' %}
+
+    <h1 class="titulo_estilizado">{% if emailaddresses %}{% trans "Email Addresses" %}{% else %}{% trans "Add Email Address" %}{% endif %}</h1>
+    
+      {% if emailaddresses %}
+        <p style="color: white;">{% trans 'The following email addresses are associated with your account:' %}</p>
+      {% url 'account_email' as email_url %}
+      <form method="POST" action="{{ email_url }}">
+        {% csrf_token %}
+        {% for radio in emailaddress_radios %}
+          {% with emailaddress=radio.emailaddress %}
+            <input class="check_email" type="radio" checked="{{ radio.checked }}" name="email" value="{{ emailaddress.email }}" id="{{ radio.id }}">
+            <label style="color: #A62994;" for="{{ radio.id }}">{{ emailaddress.email }}
+              {% if emailaddress.verified %}
+              <span style="color: #ec710d; font-size: small;" class="badge badge-success">| {% translate "Verified" %} |</span>
+              {% else %}
+              <span style="color: #dc3545; font-size: small;" class="badge badge-warning">| {% translate "Unverified" %} |</span>
+              {% endif %}
+              {% if emailaddress.primary %}
+              <span style="font-size: small;" class="badge badge-primary">| {% translate "Primary" %} |</span>
+              {% endif %}
+            </label>
+          {% endwith %}
+        {% endfor %}
+        <input type="submit" style="margin-bottom: 1px; margin-top: 15px;" class="button btn btn-outline-warning" name="action_primary" value="{% trans 'Make Primary' %}">
+        <input type="submit" style="margin-bottom: 1px; margin-top: 15px;" class="button btn btn-outline-light" name="action_send" value="{% trans 'Re-send Verification' %}">
+        <input type="submit" style="margin-bottom: 1px; margin-top: 15px;" class="button btn btn-outline-danger" name="action_remove" value="{% trans 'Remove' %}">
+      </form>
+    {% else %}
+      {% include "account/snippets/warn_no_email.html" %}
+    {% endif %}
+    {% if can_add_email %}
+      <h2 style="color: white; margin-top: 15px;">{% trans "Add Email Address" %}</h2>
+      {% url 'account_email' as action_url %}
+      <form method="post" action="{{ action_url }}">
+        {% csrf_token %}
+          {% for field in form %}
+            <input class="input" type="email" name="{{ field.name }}" placeholder="{{ field.label }}" required>
+          {% endfor %}
+          <input type="submit" class="button btn btn-outline btn_roxo" value="{% trans 'Add Email' %}" name="action_add">
+      </form>
+    {% endif %}
+  </div>
+</div>  
+  
+{% endblock conteudo %}

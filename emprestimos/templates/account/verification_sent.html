@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block conteudo %}
+<div class="div_centralizadora">
+  <div class="centralizador">
+
+    {% include 'parciais/_messages.html' %}
+
+    <h1 class="titulo_estilizado">{% trans "Verify Your Email Address" %}</h1>
+    <p style="color: white; font-size: larger;">
+      Enviamos um e-mail para você para verificação. Siga o link fornecido para finalizar o processo de inscrição. Se você não vir o e-mail de verificação na sua caixa de entrada principal, verifique sua pasta de spam. Entre em contato conosco se você não receber o e-mail de verificação dentro de alguns minutos.
+    </p>
+  </div>
+</div>  
+{% endblock conteudo %}
