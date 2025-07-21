@@ -9,6 +9,7 @@ services:
       - dotenv_files/.env
     volumes:
       - ./emprestimos:/emprestimos
+      - ./base_static:/emprestimos/base_static
     restart: always
     networks:
       - web
