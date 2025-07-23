@@ -1,26 +1,34 @@
-from decimal import Decimal
 from django.utils import timezone
 from django.dispatch import receiver
 from .models import Emprestimo, Parcela
 from django.core.exceptions import ValidationError
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from django.db.models.signals import post_delete, pre_delete, post_save
 
 @receiver(post_save, sender=Emprestimo)
 def criar_parcelas(sender, instance, created, **kwargs):
     if created:
-        # Número de parcelas como inteiro
+        valor_bruto = instance.recebimento_futuro()
         num_parcelas = int(instance.parcelas)
 
-        # Valor de cada parcela
-        valor_por_parcela = instance.recebimento_futuro() / Decimal(num_parcelas)
+        # Arredondamento para cima (padrão comercial)
+        valor_por_parcela = (valor_bruto / Decimal(num_parcelas)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        # Gerar as parcelas
+        # Diferença gerada pelo arredondamento
+        valor_total = valor_por_parcela * Decimal(num_parcelas)
+        diferenca = valor_total - valor_bruto
+
         for i in range(1, num_parcelas + 1):
+            valor_final = valor_por_parcela
+            # Subtrai o excesso na primeira parcela, para que o total final fique exato
+            if i == 1 and diferenca > 0:
+                valor_final -= diferenca
+
             Parcela.objects.create(
                 emprestimo=instance,
                 cliente=instance.cliente,
                 responsavel=instance.responsavel,
-                valor=valor_por_parcela,
+                valor=valor_final,
                 numero_parcela=str(i),
                 data_inicio=timezone.now(),
                 data_fim=timezone.now() + timezone.timedelta(days=30 * i),
