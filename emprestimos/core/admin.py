@@ -100,7 +100,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
     form = EmprestimoAdminForm
     fieldsets = (
         (None, {
-            'fields': ('responsavel', 'cliente', 'valor', 'parcelas', 'status', 'data_inicio', 'data_fim', 'data_pagamento')
+            'fields': ('responsavel', 'cliente', 'valor', 'parcelas', 'status', 'data_inicio', 'data_fim', 'data_pagamento', 'motivo')
         }),
         ('Comprovante', {
             'fields': ('comprovante_upload', 'comprovante_link', 'tipo_comprovante', 'comprovante_link_download')
