@@ -95,7 +95,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
     list_display = ['id', 'cliente', 'responsavel', 'valor_f', 'parcelas', 'status', 'atraso_detalhado_f', 'data_inicio', 'data_fim', 'data_pagamento']
     search_fields = ['cliente__nome', 'responsavel__username']
     list_filter = ['status', 'data_inicio', 'data_pagamento', AtrasoEmprestimoFilter]
-    readonly_fields = ['data_inicio', 'data_fim', 'data_pagamento', 'tipo_comprovante', 'comprovante_link', 'comprovante_link_download', 'status']
+    readonly_fields = ['tipo_comprovante', 'comprovante_link', 'comprovante_link_download', 'status']
     list_display_links = ('id', 'cliente')
     form = EmprestimoAdminForm
     fieldsets = (
@@ -128,7 +128,7 @@ class ParcelaAdmin(ImportExportModelAdmin):
     list_display = ['id', 'emprestimo', 'cliente', 'valor_f', 'numero_parcela', 'status', 'atraso_detalhado_f', 'data_inicio', 'data_fim', 'data_pagamento']
     search_fields = ['cliente__nome', 'emprestimo__id']
     list_filter = ['status', 'data_fim', AtrasoParcelaFilter]
-    readonly_fields = ['data_inicio', 'data_fim', 'data_pagamento', 'tipo_comprovante', 'comprovante_link', 'comprovante_link_download']
+    readonly_fields = ['tipo_comprovante', 'comprovante_link', 'comprovante_link_download']
     list_display_links = ('id', 'emprestimo')
     actions = ['marcar_como_pago', 'marcar_como_nao_pago']
     form = ParcelaAdminForm
