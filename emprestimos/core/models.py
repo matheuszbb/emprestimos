@@ -180,7 +180,7 @@ class Emprestimo(models.Model):
         return (self.valor + self.lucro()).quantize(Decimal('0.01'))
 
     def recebimento_atual(self):
-        total_pago = self.parcela_set.filter(status=True).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+        total_pago = self.parcela_set.filter(status=True).aggregate(total=Sum('valor_pago'))['total'] or Decimal('0.00')
         return total_pago.quantize(Decimal('0.01'))
 
     def parcelas_pagas(self):
@@ -263,6 +263,7 @@ class Parcela(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True)
     emprestimo = models.ForeignKey(Emprestimo, on_delete=models.CASCADE, null=True)
     valor = models.DecimalField(default=1000, max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('1.01'))])
+    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=Decimal('0.00'), validators=[MinValueValidator(Decimal('0.00'))])
     data_inicio = models.DateTimeField(default=timezone.now)  
     data_fim = models.DateTimeField(default=timezone.now)
     data_pagamento = models.DateTimeField(blank=True, null=True) 
@@ -277,6 +278,10 @@ class Parcela(models.Model):
     @admin.display(description="Valor")
     def valor_f(self):
         return formatar_dinheiro(self.valor)
+    
+    @admin.display(description="Valor Pago")
+    def valor_pago_f(self):
+        return formatar_dinheiro(self.valor_pago)    
 
     def atraso(self):
         return not self.status and self.data_fim < timezone.now()

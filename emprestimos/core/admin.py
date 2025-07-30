@@ -125,7 +125,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
 @admin.register(Parcela)
 class ParcelaAdmin(ImportExportModelAdmin):
     resource_class = ParcelaResource
-    list_display = ['id', 'emprestimo', 'cliente', 'valor_f', 'numero_parcela', 'status', 'atraso_detalhado_f', 'data_inicio', 'data_fim', 'data_pagamento']
+    list_display = ['id', 'emprestimo', 'cliente', 'valor_f', 'valor_pago_f', 'numero_parcela', 'status', 'atraso_detalhado_f', 'data_inicio', 'data_fim', 'data_pagamento']
     search_fields = ['cliente__nome', 'emprestimo__id']
     list_filter = ['status', 'data_fim', AtrasoParcelaFilter]
     readonly_fields = ['tipo_comprovante', 'comprovante_link', 'comprovante_link_download']
@@ -134,7 +134,7 @@ class ParcelaAdmin(ImportExportModelAdmin):
     form = ParcelaAdminForm
     fieldsets = (
         (None, {
-            'fields': ('responsavel', 'cliente', 'emprestimo', 'valor', 'numero_parcela', 'status', 'data_inicio', 'data_fim', 'data_pagamento')
+            'fields': ('responsavel', 'cliente', 'emprestimo', 'valor', 'valor_pago', 'numero_parcela', 'status', 'data_inicio', 'data_fim', 'data_pagamento')
         }),
         ('Comprovante', {
             'fields': ('comprovante_upload', 'comprovante_link', 'tipo_comprovante', 'comprovante_link_download')
