@@ -83,12 +83,30 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
+# Configurações Async para Django 5.2
+# Otimizações de performance para ASGI
+ASGI_APPLICATION = 'core.asgi.application'
 
+# Configurações de cache para melhor performance
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Configurações de sessão otimizadas
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Configurações de banco de dados para async
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / "db.sqlite3",  # BASE_DIR já deve estar definido no seu settings.py
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # Timeout para operações async
+        }
     }
 }
 
@@ -152,10 +170,38 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", default="info@example.com")
 
 # allauth config 
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-ACCOUNT_EMAIL_REQUIRED = True
+# https://console.cloud.google.com/auth/overview
+SITE_ID = 1
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+#ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGOUT_ON_GET = True
 LOGIN_REDIRECT_URL = 'index'
+ACCOUNT_ADAPTER = 'core.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = "core.adapters.SocialAccountAdapter"
+ACCOUNT_UNIQUE_EMAIL = True  # Evita erro ao criar um usuário já cadastrado
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Permite login social sem exigir novo cadastro
+SOCIALACCOUNT_STORE_TOKENS = True
+SOCIALACCOUNT_SIGNUP_REDIRECT_URL = "index"
+ACCOUNT_SIGNUP_REDIRECT_URL = "index"  # Redireciona diretamente após login
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP':{
+            'client_id': f'{os.environ.get("SOCIALACCOUNT_CLIENT_ID", default="")}',
+            'secret': f'{os.environ.get("SOCIALACCOUNT_CLIENT_SECRET", default="")}',
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
 
 # mesage
 MESSAGE_TAGS = {

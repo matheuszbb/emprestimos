@@ -1,0 +1,18 @@
+[project]
+name = "emprestimos"
+version = "0.1.0"
+description = "Sistema de Empréstimos com Django"
+dependencies = [
+    "Django>=5.2.5,<5.3",
+    "uvicorn>=0.35.0",
+    "django-allauth>=0.61.1",
+    "python-magic>=0.4.27",
+    "pillow>=10.2.0",
+    "whitenoise>=6.6.0",
+    "django-import-export>=4.3.7",
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

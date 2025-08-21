@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: emprestimos
-    command: /bin/sh -c "source /venv/bin/activate && sh ./entrypoint.sh"
+    command: /bin/sh -c "sh ./entrypoint.sh"
     env_file:
       - dotenv_files/.env
     ports:

@@ -20,7 +20,7 @@ MIME_EXTENSIONS = {
 }
 
 class ComprovanteParcelaView(LoginRequiredMixin, UserPassesTestMixin, View):
-    parcela = None  # vamos guardar a instância aqui pra reusar
+    parcela = None
 
     def test_func(self):
         parcela_id = self.kwargs.get("parcela_id")
@@ -41,7 +41,7 @@ class ComprovanteParcelaView(LoginRequiredMixin, UserPassesTestMixin, View):
         else: raise Http404
 
 class ComprovanteEmprestimoView(LoginRequiredMixin, UserPassesTestMixin, View):
-    emprestimo = None  # vamos guardar a instância aqui pra reusar
+    emprestimo = None
 
     def test_func(self):
         emprestimo_id = self.kwargs.get("emprestimo_id")

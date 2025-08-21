@@ -182,7 +182,7 @@ class Emprestimo(models.Model):
     def recebimento_atual(self):
         total_pago = self.parcela_set.filter(status=True).aggregate(total=Sum('valor_pago'))['total'] or Decimal('0.00')
         return total_pago.quantize(Decimal('0.01'))
-
+    
     def parcelas_pagas(self):
         return self.parcela_set.filter(status=True).count()
 

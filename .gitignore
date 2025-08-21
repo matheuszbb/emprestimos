@@ -98,6 +98,11 @@ coverage.xml
 # pyenv
 .python-version
 
+# UV (Python package manager)
+.venv/
+uv.lock
+.uv-cache/
+
 # celery
 celerybeat-schedule.*
 
