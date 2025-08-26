@@ -96,7 +96,7 @@ CACHES = {
 }
 
 # Configurações de sessão otimizadas
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_CACHE_ALIAS = 'default'
 
 # Configurações de banco de dados para async
