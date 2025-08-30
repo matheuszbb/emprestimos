@@ -7,9 +7,9 @@ from django.utils.html import format_html
 from django.contrib.admin import SimpleListFilter
 from import_export.admin import ImportExportModelAdmin
 from django.utils.translation import gettext_lazy as _
-from .forms import ParcelaAdminForm, EmprestimoAdminForm
-from .models import Cliente, Contato, Emprestimo, Parcela
 from utils.formatar_dinheiro import formatar_dinheiro
+from .forms import ParcelaAdminForm, EmprestimoAdminForm
+from .models import Cliente, Contato, Emprestimo, Parcela, ChatId, BotToken, Notificacao
 
 class AtrasoEmprestimoFilter(SimpleListFilter):
     title = _('Por Atrasado')
@@ -127,19 +127,29 @@ class EmprestimoAdmin(ImportExportModelAdmin):
 
     # Métodos para o fieldset Detalhes
     def detalhes_emprestimo(self, obj):
-        """Exibe informações gerais do empréstimo"""
+        """Exibe informações gerais do empréstimo, incluindo detalhes do cliente, datas e responsável"""
         if not obj:
             return "—"
+        cliente_nome = obj.cliente.nome_completo if hasattr(obj.cliente, 'nome_completo') else str(obj.cliente)
+        responsavel = obj.responsavel.get_full_name() if obj.responsavel and hasattr(obj.responsavel, 'get_full_name') and obj.responsavel.get_full_name() else (obj.responsavel.username if obj.responsavel else '—')
+        motivo = obj.motivo if hasattr(obj, 'motivo') and obj.motivo else '—'
         html = f"""
         <div style='background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;'>
             <h4 style='margin: 0 0 10px 0; color: #007bff;'>📊 Resumo do Empréstimo</h4>
             <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: black;'>
+                <div><strong>ID do Empréstimo:</strong> {obj.id}</div>
+                <div><strong>Cliente:</strong> {cliente_nome}</div>
+                <div><strong>Responsável:</strong> {responsavel}</div>
                 <div><strong>Valor:</strong> {formatar_dinheiro(obj.valor)}</div>
                 <div><strong>Parcelas:</strong> {obj.parcelas}</div>
                 <div><strong>Porcentagem:</strong> {obj.porcentagem}%</div>
                 <div><strong>Lucro:</strong> {formatar_dinheiro(obj.lucro())}</div>
                 <div><strong>Recebimento Futuro:</strong> {formatar_dinheiro(obj.recebimento_futuro())}</div>
                 <div><strong>Recebimento Atual:</strong> {formatar_dinheiro(obj.recebimento_atual())}</div>
+                <div><strong>Data de Início:</strong> {obj.data_inicio.strftime('%d/%m/%Y') if obj.data_inicio else '—'}</div>
+                <div><strong>Data de Vencimento:</strong> {obj.data_fim.strftime('%d/%m/%Y') if obj.data_fim else '—'}</div>
+                <div><strong>Data de Pagamento:</strong> {obj.data_pagamento.strftime('%d/%m/%Y') if obj.data_pagamento else '—'}</div>
+                <div style='grid-column: 1 / -1;'><strong>Motivo:</strong> {motivo}</div>
             </div>
         </div>
         """
@@ -169,7 +179,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="color: black;">
                         <strong>Parcela {parcela.numero_parcela}</strong> - {parcela.valor_f()}
-                        <br><small>Vencimento: {parcela.data_fim.strftime('%d/%m/%Y')}</small>
+                        <br><small>Vencimento: {timezone.localtime(parcela.data_fim).strftime('%d/%m/%Y')}</small>
                     </div>
                     <div style="color: {status_color}; font-weight: bold;">
                         {status_icon} {status_text}
@@ -377,3 +387,20 @@ class ParcelaAdmin(ImportExportModelAdmin):
     marcar_como_pago.short_description = "Marcar como pagas"
     marcar_como_nao_pago.short_description = "Marcar como não pagas"
 
+@admin.register(ChatId)
+class ChatIdAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nome', 'dono', 'chat_id', 'plataforma']
+    search_fields = ['nome', 'chat_id', 'dono__username']
+    list_filter = ['plataforma']
+
+@admin.register(BotToken)
+class BotTokenAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nome', 'dono', 'token', 'plataforma']
+    search_fields = ['nome', 'token', 'dono__username']
+    list_filter = ['plataforma']
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'dono', 'token', 'chat_id', 'plataforma']
+    search_fields = ['dono__username', 'token__nome', 'chat_id__nome']
+    list_filter = ['plataforma']

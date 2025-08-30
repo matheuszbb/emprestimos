@@ -31,11 +31,11 @@ def criar_parcelas(sender, instance, created, **kwargs):
                 valor=valor_final,
                 numero_parcela=str(i),
                 data_inicio=timezone.now(),
-                data_fim=timezone.now() + timezone.timedelta(days=30 * i),
+                data_fim=timezone.now() + timezone.timedelta(days=31 * i),
             )
 
         # Atualizar data_fim do empréstimo
-        instance.data_fim = timezone.now() + timezone.timedelta(days=30 * num_parcelas)
+        instance.data_fim = timezone.now() + timezone.timedelta(days=31 * num_parcelas)
         instance.save()
 
 @receiver(post_save, sender=Parcela)

@@ -7,8 +7,8 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import PermissionDenied
 from django.template.loader import render_to_string
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, Http404, HttpResponseForbidden
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import HttpResponse, Http404, HttpResponseForbidden, JsonResponse
 
 MIME_EXTENSIONS = {
     'application/pdf': 'pdf',
@@ -60,6 +60,10 @@ class ComprovanteEmprestimoView(LoginRequiredMixin, UserPassesTestMixin, View):
             response['Content-Disposition'] = f'inline; filename="{nome}"'
             return response
         else: raise Http404
+
+class HeartCheckView(View):
+    def get(self, request):
+        return JsonResponse({"status": "OK"}, status=200)
 
 class Robots_txtView(View):
     def get(self, request):

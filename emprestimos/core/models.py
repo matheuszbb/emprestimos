@@ -22,6 +22,23 @@ TIPO_CONTATO_CHOICES = (
     ('telegram', 'Telegram'),
 )
 
+PLATAFORMAS_CHOICES = [
+    ('telegram', 'Telegram'),
+    ('discord', 'Discord'),
+]
+
+def validate_token(value):
+    if not re.match(r"^[a-zA-Z0-9:_\.-]+$", value):
+        raise ValidationError(
+            f'"{value}" não é um token válido. O token deve conter apenas letras, números e os símbolos ":-_."'
+        )
+
+def validate_chat_id(value, plataforma):
+    if plataforma == 'telegram' and not re.match(r"^-\d+$", value):
+        raise ValidationError(
+            f"{value} não é válido para Telegram. O chat_id deve começar com '-' e conter apenas números."
+        )
+
 def validate_cpf(cpf):
     cpf = re.sub(r'\D', '', cpf)
 
@@ -332,3 +349,47 @@ class Parcela(models.Model):
         if self.emprestimo and self.emprestimo.pk:
             raise ValidationError("Parcelas não podem ser apagadas diretamente. Exclua o empréstimo para remover todas.")
         super().delete(using=using, keep_parents=keep_parents)
+
+class ChatId(models.Model):
+    nome = models.CharField(max_length=255, null=False)
+    dono = models.ForeignKey(User, on_delete=models.CASCADE)
+    chat_id = models.CharField(max_length=255, null=False, unique=True)
+    plataforma = models.CharField(max_length=10, choices=PLATAFORMAS_CHOICES, default='telegram')
+
+    def clean(self):
+        validate_chat_id(self.chat_id, self.plataforma)
+
+    def __str__(self):
+        return f"{self.nome} - {self.dono} - {self.plataforma}"
+
+class BotToken(models.Model):
+    nome = models.CharField(max_length=255, null=False)
+    dono = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, null=False, unique=True, validators=[validate_token])
+    plataforma = models.CharField(max_length=10, choices=PLATAFORMAS_CHOICES, default='telegram')
+
+    def __str__(self):
+        return f"{self.nome} - {self.dono} - {self.plataforma}"
+
+class Notificacao(models.Model):
+    dono = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.ForeignKey(BotToken, on_delete=models.CASCADE)
+    chat_id = models.ForeignKey(ChatId, on_delete=models.CASCADE)
+    plataforma = models.CharField(max_length=10, choices=PLATAFORMAS_CHOICES, default='telegram')
+
+    def clean(self):
+        if self.token.dono != self.dono:
+            raise ValidationError("O dono do token deve ser o mesmo da notificação.")
+        if self.chat_id.dono != self.dono:
+            raise ValidationError("O dono do chat_id deve ser o mesmo da notificação.")
+        if self.token.plataforma != self.chat_id.plataforma:
+            raise ValidationError("O token e o chat_id devem ser da mesma plataforma.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        if self.token and self.chat_id:
+            self.plataforma = self.token.plataforma
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.dono} - {self.id}"
