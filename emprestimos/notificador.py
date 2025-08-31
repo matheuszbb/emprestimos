@@ -98,15 +98,9 @@ class DB():
 
 class Notificador():
     async def buscar_vencimentos(self):
-        # Amanhã
         parcelas_amanha = await self.db.get_parcelas_a_vencer_amanha()
-        print(parcelas_amanha)
-        # Hoje
         parcelas_hoje = await self.db.get_parcelas_a_vencer_hoje()
-        print(parcelas_hoje)
-        # Vencidas
         parcelas_vencidas = await self.db.get_parcelas_vencidas()
-        print(parcelas_vencidas)
 
         for parcela in parcelas_amanha:
             await self.notificar_vencimentos(parcela)
@@ -137,13 +131,16 @@ class Notificador():
                 porcentagem = f"{emprestimo['porcentagem']}%" if emprestimo else '%'
                 admin_url = f"{os.getenv('SITE_URL')}admin/core/emprestimo/{emprestimo['id']}/change/" if emprestimo else '#'
 
-                # Identificação do tipo de vencimento
                 data_fim = parcela['data_fim'][:10]
-                # Converter para d/m/a
                 try:
                     data_fim_fmt = datetime.datetime.strptime(data_fim, "%Y-%m-%d").strftime("%d/%m/%Y")
                 except Exception:
                     data_fim_fmt = data_fim
+
+                try:
+                    data_inicio_fmt = datetime.datetime.strptime(parcela['data_inicio'][:10], "%Y-%m-%d").strftime("%d/%m/%Y")
+                except Exception:
+                    data_inicio_fmt = parcela['data_inicio'][:10] if 'data_inicio' in parcela else ''
 
                 hoje = date.today().isoformat()
                 amanha = (date.today() + timedelta(days=1)).isoformat()
@@ -156,25 +153,23 @@ class Notificador():
                 else:
                     titulo = "📢 **Aviso de Parcela**"
 
-                valor_formatado = await self.escape_markdown_v2(f"{parcela['valor']:,.2f}")
-                responsavel_formatado = await self.escape_markdown_v2(parcela.get('responsavel_username', '-'))
-
-                # Data de início formatada
-                try:
-                    data_inicio_fmt = datetime.datetime.strptime(parcela['data_inicio'][:10], "%Y-%m-%d").strftime("%d/%m/%Y")
-                except Exception:
-                    data_inicio_fmt = parcela['data_inicio'][:10] if 'data_inicio' in parcela else '-'
+                valor_formatado_parcela = await self.escape_markdown_v2(f"{parcela['valor']:,.2f}")
+                valor_formatado_emprestimo = await self.escape_markdown_v2(f"{emprestimo['valor']:,.2f}") if emprestimo else '0,00'
+                responsavel_formatado = await self.escape_markdown_v2(parcela.get('responsavel_username', ''))
+                motivo = await self.escape_markdown_v2(emprestimo.get('motivo', ''))
 
                 mensagem = (
                     f"{titulo}\n\n"
-                    f"👤 Cliente: {cliente['nome_completo'] if cliente else '-'}\n"
+                    f"👤 Cliente: {cliente['nome_completo'] if cliente else ''}\n"
                     f"💳 Parcela: {parcela['numero_parcela']} de {total_parcelas}\n"
-                    f"💰 Valor: R$ {valor_formatado}\n"
+                    f"💰 Valor Empréstimo: R$ {valor_formatado_emprestimo}\n"
+                    f"💰 Valor Parcela: R$ {valor_formatado_parcela}\n"
                     f"📆 Início: {data_inicio_fmt}\n"
                     f"📅 Vencimento: {data_fim_fmt}\n"
                     f"📈 Porcentagem: {porcentagem}\n"
                     f"🔗 Status: {'Pendente' if not parcela['status'] else 'Paga'}\n"
                     f"👨‍💼 Responsável: {responsavel_formatado}\n"
+                    f"📝 Motivo: {motivo}\n"
                     f"\n🔗 [Ver Empréstimo no Admin]({admin_url})"
                 )
                 
