@@ -11,7 +11,7 @@ from utils.atraso_detalhado import atraso_detalhado
 from utils.formatar_dinheiro import formatar_dinheiro
 from django.core.validators import MinValueValidator, MaxValueValidator, MaxLengthValidator
 
-PARCELAS_CHOICES = [(str(i), str(i)) for i in range(1,13,1)]
+PARCELAS_CHOICES = [(str(i), str(i)) for i in range(1,49,1)]
 
 TIPO_CONTATO_CHOICES = (
     ('celular', 'Celular'),
@@ -332,8 +332,8 @@ class Parcela(models.Model):
                 original = Parcela.objects.get(pk=self.pk)
                 if original.numero_parcela != self.numero_parcela:
                     raise ValidationError("Não é permitido alterar o número da parcela existente.")
-                if original.valor != self.valor:
-                    raise ValidationError("Não é permitido alterar o valor da parcela depois da criação.")
+                # if original.valor != self.valor:
+                #     raise ValidationError("Não é permitido alterar o valor da parcela depois da criação.")
                 if original.responsavel != self.responsavel:
                     raise ValidationError("Não é permitido alterar o(a) responsável depois da criação.")
                 if original.cliente != self.cliente:
