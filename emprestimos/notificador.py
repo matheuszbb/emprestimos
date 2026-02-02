@@ -3,7 +3,7 @@ import re
 import uvloop
 import asyncio
 import logging
-import aiohttp
+import httpx
 import datetime
 import aiosqlite
 from aiotelegram import TelegramBot
@@ -129,7 +129,7 @@ class Notificador():
 
                 total_parcelas = emprestimo['parcelas'] if emprestimo else '?'
                 porcentagem = f"{emprestimo['porcentagem']}%" if emprestimo else '%'
-                admin_url = f"{os.getenv('SITE_URL')}admin/core/emprestimo/{emprestimo['id']}/change/" if emprestimo else '#'
+                admin_url = f"{os.getenv('SITE_URL')}emprestimosadmindjango/core/emprestimo/{emprestimo['id']}/change/" if emprestimo else '#'
 
                 data_fim = parcela['data_fim'][:10]
                 try:
@@ -195,15 +195,15 @@ class Notificador():
     async def health_check(self):
         while True:
             try:
-                health_url = f"{os.getenv('SITE_URL')}health"
+                health_url = f"{os.getenv('SITE_URL')}health/"
                 logging.warning(f"Verificando saúde do serviço em {health_url}...")
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(health_url) as resp:
-                        if resp.status == 200:
-                            logging.warning("Serviço está saudável.")
-                            break
-                        else:
-                            logging.warning(f"Serviço retornou status {resp.status}.")
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(health_url)
+                    if resp.status_code == 200:
+                        logging.warning("Serviço está saudável.")
+                        break
+                    else:
+                        logging.warning(f"Serviço retornou status {resp.status_code}.")
             except Exception as e:
                 logging.error(f"Erro ao verificar saúde do serviço: {e}")
             await asyncio.sleep(1)
@@ -237,6 +237,5 @@ if __name__ == "__main__":
         logging.StreamHandler()  # Log no console
         ]
     )    
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     notificador = Notificador()
-    asyncio.run(notificador.main())
+    asyncio.run(notificador.main(), loop_factory=uvloop.new_event_loop)

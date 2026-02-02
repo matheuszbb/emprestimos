@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.utils import timezone
 from import_export import resources
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.contrib.admin import SimpleListFilter
 from import_export.admin import ImportExportModelAdmin
 from django.utils.translation import gettext_lazy as _
@@ -62,10 +63,12 @@ class ContatoResource(resources.ModelResource):
 class EmprestimoResource(resources.ModelResource):
     class Meta:
         model = Emprestimo
+        exclude = ("comprovante",)
 
 class ParcelaResource(resources.ModelResource):
     class Meta:
         model = Parcela
+        exclude = ("comprovante",)
 
 @admin.register(Cliente)
 class ClienteAdmin(ImportExportModelAdmin):
@@ -116,13 +119,13 @@ class EmprestimoAdmin(ImportExportModelAdmin):
     def comprovante_link(self, obj):
         if obj.comprovante:
             url = f'/emprestimo/{obj.pk}/comprovante/'
-            return format_html(f'<a href="{url}" target="_blank">📎 Visualizar comprovante</a>')
+            return format_html('<a href="{}" target="_blank">📎 Visualizar comprovante</a>', url)
         return "—"
     
     def comprovante_link_download(self, obj):
         if obj.comprovante:
             url = f'/emprestimo/{obj.pk}/comprovante/'
-            return format_html(f'<a href="{url}" download>⬇️ Baixar comprovante</a>')
+            return format_html('<a href="{}" download>⬇️ Baixar comprovante</a>', url)
         return "—"
 
     # Métodos para o fieldset Detalhes
@@ -153,7 +156,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             </div>
         </div>
         """
-        return format_html(html)
+        return mark_safe(html)
     
     def parcelas_vinculadas(self, obj):
         """Exibe lista completa e ordenada das parcelas vinculadas, sem scroll"""
@@ -173,7 +176,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             status_color = "#28a745" if parcela.status else "#dc3545"
             status_icon = "✅" if parcela.status else "❌"
             status_text = "Paga" if parcela.status else "Pendente"
-            admin_url = f'/admin/core/parcela/{parcela.pk}/change/'
+            admin_url = f'/emprestimosadmindjango/core/parcela/{parcela.pk}/change/'
             html += f"""
             <div style="border: 1px solid #dee2e6; padding: 10px; margin: 5px 0; border-radius: 5px; background: white;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -194,7 +197,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             """
 
         html += '</div></div>'
-        return format_html(html)
+        return mark_safe(html)
     
     def status_detalhado(self, obj):
         """Exibe status detalhado do empréstimo"""
@@ -217,7 +220,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             </div>
         </div>
         """
-        return format_html(html)
+        return mark_safe(html)
     
     def dias_vencimento(self, obj):
         """Exibe dias até o vencimento do empréstimo e da próxima parcela não paga"""
@@ -260,7 +263,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             vencimento_parcela = proxima_parcela.data_fim.date()
             dias_restantes_parcela = (vencimento_parcela - hoje).days
             valor_parcela = formatar_dinheiro(proxima_parcela.valor)
-            admin_url = f"/admin/core/parcela/{proxima_parcela.pk}/change/"
+            admin_url = f"/emprestimosadmindjango/core/parcela/{proxima_parcela.pk}/change/"
             valor_link = f"<a href='{admin_url}' target='_blank' style='color: #007bff; text-decoration: underline; font-weight: bold;'>parcela ({valor_parcela})</a>"
             if dias_restantes_parcela > 0:
                 color_p = "#17a2b8"  # Azul
@@ -287,7 +290,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             </div>
             """
 
-        return format_html(html)
+        return mark_safe(html)
     
     def dias_atrasado(self, obj):
         """Exibe dias de atraso"""
@@ -317,7 +320,7 @@ class EmprestimoAdmin(ImportExportModelAdmin):
             </div>
             """
         
-        return format_html(html)
+        return mark_safe(html)
     
     # Configurações dos campos
     detalhes_emprestimo.short_description = "📊 Resumo do Empréstimo"
@@ -351,13 +354,13 @@ class ParcelaAdmin(ImportExportModelAdmin):
     def comprovante_link_download(self, obj):
         if obj.comprovante:
             url = f'/parcela/{obj.pk}/comprovante/'
-            return format_html(f'<a href="{url}" download>⬇️ Baixar comprovante</a>')
+            return format_html('<a href="{}" download>⬇️ Baixar comprovante</a>', url)
         return "—"
 
     def comprovante_link(self, obj):
         if obj.comprovante:
             url = f'/parcela/{obj.pk}/comprovante/'
-            return format_html(f'<a href="{url}" target="_blank">📎 Visualizar comprovante</a>')
+            return format_html('<a href="{}" target="_blank">📎 Visualizar comprovante</a>', url)
         return "—"
     
     def marcar_como_pago(self, request, queryset):

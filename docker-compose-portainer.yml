@@ -2,7 +2,7 @@ services:
   emprestimos:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile.prod
     image: emprestimos
     command: /bin/sh -c "sh ./entrypoint.sh"
     env_file:

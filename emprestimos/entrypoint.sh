@@ -1,22 +1,52 @@
 #!/bin/sh
 
 set -e
-
-python manage.py collectstatic --noinput
-python manage.py makemigrations --noinput 
-python manage.py migrate --noinput
-
-if [ -n "$SUPER_USER_NAME" ]; then
-    EXISTS=$(echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.filter(username='$SUPER_USER_NAME').exists())" | python manage.py shell)
-    if echo "$EXISTS" | grep 'False'; then
-        DJANGO_SUPERUSER_PASSWORD=$SUPER_USER_PASSWORD python manage.py createsuperuser --username $SUPER_USER_NAME --email $SUPER_USER_EMAIL --noinput
-    fi
+if [ ! -f "core/__init__.py" ]; then
+    django-admin startproject core .
 fi
 
-python notificador.py &
+uv run python manage.py collectstatic --noinput
+uv run python manage.py makemigrations --noinput 
+uv run python manage.py migrate --noinput
 
 if [ "$DEBUG" = "1" ]; then
-    python manage.py runserver 0.0.0.0:8000
+python - <<'EOF'
+import os
+from core import settings
+
+for code, _ in settings.LANGUAGES:
+    parts = code.split('-')
+    if len(parts) == 2:
+        folder = f"{parts[0]}_{parts[1].upper()}"
+    else:
+        folder = code
+
+    path = os.path.join(settings.BASE_DIR, 'locale', folder, 'LC_MESSAGES')
+    os.makedirs(path, exist_ok=True)
+EOF
+
+python manage.py makemessages -a -v 0
+python manage.py makemessages -d djangojs -a -v 0
+python manage.py compilemessages -v 0
+fi
+
+if [ -n "$SUPER_USER_NAME" ]; then
+  uv run python manage.py shell <<EOF
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username="${SUPER_USER_NAME}").exists():
+    User.objects.create_superuser(
+        username="${SUPER_USER_NAME}",
+        email="${SUPER_USER_EMAIL}",
+        password="${SUPER_USER_PASSWORD}"
+    )
+EOF
+fi
+
+uv run python notificador.py &
+
+if [ "$DEBUG" = "1" ]; then
+    uv run python manage.py runserver 0.0.0.0:8000
 else
-    uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --workers 4
+    uv run uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --workers 1 --log-level warning --lifespan off --loop uvloop --http httptools --timeout-keep-alive 5 --use-colors
 fi

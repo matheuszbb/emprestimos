@@ -1,6 +1,6 @@
 from django.views import View
 from django.contrib import messages
-from .models import Parcela, Emprestimo
+from ..models import Parcela, Emprestimo
 from datetime import datetime, timedelta
 from allauth.account.views import SignupView
 from django.utils.safestring import mark_safe
@@ -61,31 +61,6 @@ class ComprovanteEmprestimoView(LoginRequiredMixin, UserPassesTestMixin, View):
             return response
         else: raise Http404
 
-class HeartCheckView(View):
-    def get(self, request):
-        return JsonResponse({"status": "OK"}, status=200)
-
-class Robots_txtView(View):
-    def get(self, request):
-        robots_txt_content = f"""\
-User-Agent: *
-Allow: /
-Sitemap: {request.build_absolute_uri('/sitemap.xml')}
-"""
-        return HttpResponse(robots_txt_content, content_type="text/plain", status=200)
-
-class Sitemap_xmlView(View):
-    def get(self, request):
-        site_url = request.build_absolute_uri('/')[:-1]  # Remove a última barra se houver
-        sitemap_xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url>
-    <loc>{site_url}</loc>
-</url>
-</urlset>
-"""
-        return HttpResponse(sitemap_xml_content, content_type="application/xml", status=200)
-    
 class IndexView(View):
     def get(self, request):
         return redirect('admin:index')

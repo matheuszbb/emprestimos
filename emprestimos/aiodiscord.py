@@ -1,4 +1,4 @@
-import aiohttp
+import httpx
 import asyncio
 from dataclasses import dataclass
 
@@ -30,14 +30,14 @@ class DiscordBot:
         }
 
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
-                async with session.post(url, json=payload, headers=headers) as response:
-                    data = await response.json()
-                    return DiscordResponse(
-                        success=response.status == 200,
-                        result=data if response.status == 200 else {},
-                        error_message=data.get("message") if response.status != 200 else None
-                    )
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                data = response.json()
+                return DiscordResponse(
+                    success=response.status_code == 200,
+                    result=data if response.status_code == 200 else {},
+                    error_message=data.get("message") if response.status_code != 200 else None
+                )
         except asyncio.TimeoutError:
             raise TimeoutError("Timeout, a requisição para a API do Discord expirou.")
         except Exception as e:
@@ -152,10 +152,10 @@ class DiscordBot:
         url = f"{self.base_url}/channels/{chat_id}/messages/{message_id}"
         headers = {"Authorization": f"Bot {self.token}"}
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.delete(url, headers=headers) as response:
-                    if response.status == 204:
-                        return {"ok": True, "description": "Mensagem deletada com sucesso."}
+            async with httpx.AsyncClient() as client:
+                response = await client.delete(url, headers=headers)
+                if response.status_code == 204:
+                    return {"ok": True, "description": "Mensagem deletada com sucesso."}
         except asyncio.TimeoutError:
             raise TimeoutError("Timeout, a requisição para a API do Discord expirou.")
         except Exception as e:

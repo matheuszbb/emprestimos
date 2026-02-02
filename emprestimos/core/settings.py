@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 import sys
+import logging
 from pathlib import Path
 from django.contrib.messages import constants
 
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.gzip.GZipMiddleware',  # Compressão de respostas para melhor performance
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,7 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    'core.middleware.AsyncStaticMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -140,11 +142,29 @@ USE_I18N = True
 
 USE_TZ = True
 
+LANGUAGES = [
+    ('pt-br', 'Português'),
+    ('en', 'English'),
+    ('es', 'Spanish'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
+LANGUAGE_COOKIE_NAME = 'django_language'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = (
@@ -222,12 +242,33 @@ if DEBUG == False:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-    SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE = 'Lax'
     DEBUG_PROPAGATE_EXCEPTIONS = False
 
 # LOGGING
+class ColoredFormatter(logging.Formatter):
+    COLORS = {
+        'DEBUG': '\x1b[36m',    # cyan
+        'INFO': '\x1b[32m',     # green
+        'WARNING': '\x1b[33m',  # yellow
+        'ERROR': '\x1b[31m',    # red
+        'CRITICAL': '\x1b[35m', # magenta
+    }
+    RESET = '\x1b[0m'
+
+    def format(self, record):
+        # Se NO_COLOR estiver setado, não usar cores
+        if os.environ.get('NO_COLOR'):
+            return super().format(record)
+
+        color = self.COLORS.get(record.levelname, '')
+        formatted = super().format(record)
+        if color:
+            return f"{color}{formatted}{self.RESET}"
+        return formatted
+    
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -235,7 +276,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'stream': sys.stdout,  # Direciona para stdout do contêiner
-            'formatter': 'verbose',
+            'formatter': 'colored',
         },
     },
     'formatters': {
@@ -243,12 +284,34 @@ LOGGING = {
             'format': '%(asctime)s [%(levelname)s] %(lineno)d >> %(message)s',
             'datefmt': '%d/%m/%Y %H:%M:%S',
         },
+        # Formatter que usa uma classe para colorir o levelname com ANSI codes.
+        'colored': {
+            '()': ColoredFormatter,
+            'format': '%(asctime)s [%(levelname)s] %(lineno)d >> %(message)s',
+            'datefmt': '%d/%m/%Y %H:%M:%S',
+        },
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'WARNING',  # Ajuste conforme necessário
+            'level': 'INFO' if DEBUG else 'WARNING',  # Ajuste conforme necessário
             'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'ERROR',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': True,
+        },
+        # Logger dedicado para mensagens de startup/health — sempre INFO em produção
+        'core.startup': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }

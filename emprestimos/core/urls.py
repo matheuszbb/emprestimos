@@ -14,23 +14,43 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
-from .views import IndexView, Robots_txtView, Sitemap_xmlView, CustomSignupView, ComprovanteParcelaView, ComprovanteEmprestimoView, HeartCheckView
 from django.conf.urls.static import static
-from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
+from django.views.i18n import JavaScriptCatalog
+from .views.corefilesviews import (
+    IndexView, CustomSignupView, ComprovanteParcelaView, ComprovanteEmprestimoView
+)
+from .views.simpleviews import (
+    Robots_txtView, Sitemap_xmlView, HeartCheckView, ChromeDevToolsStubView,
+)
 
+# 🌍 Rotas que não precisam de tradução (como arquivos técnicos e APIs)
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', IndexView.as_view(), name='index'),
     path('health/', HeartCheckView.as_view(), name='health_check'),
     path('robots.txt', Robots_txtView.as_view(), name='robots_txt'),
     path('sitemap.xml', Sitemap_xmlView.as_view(), name='sitemap_xml'),    
+    path(".well-known/appspecific/com.chrome.devtools.json", ChromeDevToolsStubView.as_view(), name="chrome-devtools-stub"),
+
     path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
     path('accounts/', include('allauth.urls')),
     path('parcela/<int:parcela_id>/comprovante/', ComprovanteParcelaView.as_view(), name='visualizar_comprovante_parcela'),
     path('emprestimo/<int:emprestimo_id>/comprovante/', ComprovanteEmprestimoView.as_view(), name='visualizar_comprovante_emprestimo'),
+    # Rota para troca de idioma
+    path('i18n/', include('django.conf.urls.i18n')),
+    path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
 ]
 
+# 🌐 Rotas que devem ser traduzíveis (prefixadas com /pt-br/, /en/, etc.)
+urlpatterns += i18n_patterns(
+    path('emprestimosadmindjango/', admin.site.urls),
+    path('', IndexView.as_view(), name='index'),
+    prefix_default_language=True  # ❗️Evita prefixo para o idioma padrão (pt-br)
+)
+
+# Arquivos estáticos e de mídia
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

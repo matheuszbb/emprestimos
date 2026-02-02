@@ -1,4 +1,4 @@
-import aiohttp
+import httpx
 import asyncio
 import uvloop
 from dataclasses import dataclass
@@ -28,14 +28,14 @@ class TelegramBot:
     async def send_request(self, method, payload):
         url = f"{self.base_url}/{method}"
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
-                async with session.post(url, json=payload) as response:
-                    data = await response.json()
-                    return TelegramResponse(
-                        ok=data.get("ok"),
-                        result=data.get("result", {}),
-                        description=data.get("description")
-                    )
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload)
+                data = response.json()
+                return TelegramResponse(
+                    ok=data.get("ok"),
+                    result=data.get("result", {}),
+                    description=data.get("description")
+                )
         except asyncio.TimeoutError:
             raise TimeoutError("Timeout, a requisição para a API do Telegram expirou.")
         except Exception as e:
