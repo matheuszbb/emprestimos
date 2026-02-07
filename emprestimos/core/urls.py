@@ -35,6 +35,7 @@ urlpatterns = [
     path('sitemap.xml', Sitemap_xmlView.as_view(), name='sitemap_xml'),    
     path(".well-known/appspecific/com.chrome.devtools.json", ChromeDevToolsStubView.as_view(), name="chrome-devtools-stub"),
 
+    path('emprestimosadmindjango/', admin.site.urls),
     path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
     path('accounts/', include('allauth.urls')),
     path('parcela/<int:parcela_id>/comprovante/', ComprovanteParcelaView.as_view(), name='visualizar_comprovante_parcela'),
@@ -46,7 +47,6 @@ urlpatterns = [
 
 # 🌐 Rotas que devem ser traduzíveis (prefixadas com /pt-br/, /en/, etc.)
 urlpatterns += i18n_patterns(
-    path('emprestimosadmindjango/', admin.site.urls),
     path('', IndexView.as_view(), name='index'),
     prefix_default_language=True  # ❗️Evita prefixo para o idioma padrão (pt-br)
 )
