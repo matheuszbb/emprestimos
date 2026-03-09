@@ -1,6 +1,6 @@
-import httpx
-import asyncio
 import uvloop
+import aiohttp
+import asyncio
 from dataclasses import dataclass
 
 @dataclass
@@ -16,7 +16,7 @@ class MessageInfo:
     text: str
 
 class TelegramBot:
-    def __init__(self, token, timeout=3, parse_mode="HTML", disable_web_page_preview=True):
+    def __init__(self, token, timeout=10, parse_mode="HTML", disable_web_page_preview=True):
         if not token:
             raise ValueError("O token do bot é obrigatório.")
         self.token = token
@@ -24,23 +24,54 @@ class TelegramBot:
         self.timeout = timeout
         self.parse_mode = parse_mode
         self.disable_web_page_preview = disable_web_page_preview
+        self._session: aiohttp.ClientSession | None = None
+        self._session_lock = asyncio.Lock()
+
+    async def get_session(self) -> aiohttp.ClientSession:
+        async with self._session_lock:
+            if self._session is None or self._session.closed:
+                self._session = aiohttp.ClientSession(
+                    timeout=aiohttp.ClientTimeout(
+                        connect=2,
+                        sock_read=3,
+                    ),
+                    connector=aiohttp.TCPConnector(
+                        keepalive_timeout=60,  # margem confortável para o intervalo de 3s
+                        limit_per_host=10,      # 10 conexões paralelas com api.telegram.org
+                        ttl_dns_cache=300,     # cache DNS por 5 minutos — evita resolução repetida
+                        use_dns_cache=True,
+                    )
+                )
+        return self._session
+
+    async def reset_session(self):
+        async with self._session_lock:
+            if self._session and not self._session.closed:
+                await self._session.connector.close()  # fecha o TCPConnector
+                await self._session.close()
+            self._session = None
 
     async def send_request(self, method, payload):
         url = f"{self.base_url}/{method}"
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, json=payload)
-                data = response.json()
+            session = await self.get_session()
+            async with session.post(url, json=payload) as response:
+                if response.status == 429:
+                    raise RuntimeError("Rate limit atingido")
+                data = await response.json()
                 return TelegramResponse(
                     ok=data.get("ok"),
                     result=data.get("result", {}),
                     description=data.get("description")
                 )
+        except aiohttp.ClientConnectionError:
+            await self.reset_session()
+            raise RuntimeError("Conexão perdida com o Telegram")
         except asyncio.TimeoutError:
-            raise TimeoutError("Timeout, a requisição para a API do Telegram expirou.")
+            raise TimeoutError("Timeout na requisição para o Telegram expirou.")
         except Exception as e:
-            raise RuntimeError(f"Erro inesperado do tipo '{type(e).__name__}': {str(e)}.\n Resposta esperada: {repr(e)}")
-
+            raise RuntimeError(f"Erro inesperado do tipo '{type(e).__name__}': {str(e)}")
+    
     async def send_message(self, chat_id=None, text=None, parse_mode=None, reply_markup=None, disable_web_page_preview=None,reply_to_message_id=None):
         if not chat_id:
             raise ValueError("O chat_id é obrigatório.")
@@ -138,20 +169,28 @@ class TelegramBot:
             raise ValueError("O chat_id é obrigatório.")
         if not message_id:
             raise ValueError("O message_id é obrigatório.")
+        
         payload = {
             "chat_id": chat_id,
             "message_id": message_id
         }
-        return await self.send_request("deleteMessage", payload)
 
-    async def InlineKeyboardButton(self, text="", url=""):
+        for tentativa in range(1, 4):  # 3 tentativas
+            try:
+                return await self.send_request("deleteMessage", payload)
+            except Exception as e:
+                if tentativa == 3:
+                    raise
+                await asyncio.sleep(tentativa)  # 1s, 2s entre tentativas
+
+    def InlineKeyboardButton(self, text="", url=""):
         button = {
             "text": text,
             "url": url
         }
         return button
     
-    async def InlineKeyboardMarkup(self, buttons):   
+    def InlineKeyboardMarkup(self, buttons):   
         inline_buttons = []
         for button in buttons:
             inline_buttons.append(button)
@@ -162,11 +201,11 @@ async def main():
     bot = TelegramBot(token="token")
     chat_id = "chat_id"
     keyboard = []
-    button = await bot.InlineKeyboardButton(text="Botão 1", url="https://site1.com")
+    button = bot.InlineKeyboardButton(text="Botão 1", url="https://bet-bots.com/")
     keyboard.append([button])
-    button = await bot.InlineKeyboardButton(text="Botão 2", url="https://site2.com")
+    button = bot.InlineKeyboardButton(text="Botão 2", url="https://bet-bots.com/")
     keyboard.append([button])
-    botoes = await bot.InlineKeyboardMarkup(keyboard)
+    botoes = bot.InlineKeyboardMarkup(keyboard)
     texto = "Escolha uma opção:<p><br></p><i>teste</i>".replace('<p><br></p>', "\n\n").replace('</p><p>', "\n").replace('<p>', "").replace('</p>', "")
     sticker_id = "CAACAgEAAxkBAAEKy1plXS_OkfIkC7JKYqs7jeVlJyuVBgAC4QIAAm9g-UZesNP5SGZaVjME"
     #mensagem = await bot.send_message(chat_id=chat_id, text=texto, reply_markup=botoes)
@@ -180,5 +219,4 @@ async def main():
     #     print(delete_resposta)
 
 if __name__ == "__main__":
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    asyncio.run(main())  # Inicia o loop de eventos
+    uvloop.run(main())  # Inicia o loop de eventos com uvloop
