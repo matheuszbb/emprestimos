@@ -25,10 +25,32 @@ from .views.corefilesviews import (
 )
 from .views.simpleviews import (
     Robots_txtView, Sitemap_xmlView, HeartCheckView, ChromeDevToolsStubView,
+    StaticCacheStatsView, CacheDashboardView, CacheControlView, CompleteCacheAdminView
 )
 
 # 🌍 Rotas que não precisam de tradução (como arquivos técnicos e APIs)
 urlpatterns = [
+        # Endpoint JSON com stats
+    path(
+        '_debug/static-cache/',
+        StaticCacheStatsView.as_view(),
+        name='static_cache_stats'
+    ),
+    
+    # Dashboard HTML
+    path(
+        '_debug/cache-dashboard/',
+        CacheDashboardView.as_view(),
+        name='cache_dashboard'
+    ),
+    
+    # API de controle (GET e POST)
+    path(
+        'api/cache/control/',
+        CacheControlView.as_view(),
+        name='cache_control'
+    ),
+    
     path('', IndexView.as_view(), name='index'),
     path('health/', HeartCheckView.as_view(), name='health_check'),
     path('robots.txt', Robots_txtView.as_view(), name='robots_txt'),
@@ -40,6 +62,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('parcela/<int:parcela_id>/comprovante/', ComprovanteParcelaView.as_view(), name='visualizar_comprovante_parcela'),
     path('emprestimo/<int:emprestimo_id>/comprovante/', ComprovanteEmprestimoView.as_view(), name='visualizar_comprovante_emprestimo'),
+    path('_debug/complete-cache-admin/', CompleteCacheAdminView.as_view(), name='complete_cache_admin'),
     # Rota para troca de idioma
     path('i18n/', include('django.conf.urls.i18n')),
     path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),

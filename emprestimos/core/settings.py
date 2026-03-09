@@ -175,6 +175,38 @@ STATIC_ROOT = BASE_DIR / 'static'  # collectstatic
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ============================================================================
+# ASYNC STATIC MIDDLEWARE CONFIGURATION (Django 4.2+ Pattern)
+# ============================================================================
+# Configuração modular para AsyncStaticMiddleware
+# Pode ser alterada via variáveis de ambiente
+
+STATIC_MIDDLEWARE = {
+    "storage": {
+        # Performance - Tamanho do chunk para streaming (512KB otimizado para SSD/NVMe)
+        "CHUNK_SIZE": int(os.getenv('STATIC_CHUNK_SIZE', 524288)),
+        
+        # Cache - Limite máximo de memória para cache de metadados (em MB)
+        "MAX_CACHE_MEMORY_MB": int(os.getenv('STATIC_MAX_CACHE_MEMORY_MB', 5)),
+        
+        # Cache - Tamanho médio estimado por entrada de cache (em bytes)
+        "AVG_CACHE_ENTRY_SIZE": int(os.getenv('STATIC_AVG_CACHE_ENTRY_SIZE', 320)),
+        
+        # Logging - Debug logging
+        "DEBUG_LOGGING": bool(int(os.getenv('STATIC_DEBUG_LOGGING', 0))),
+    },
+    "cache": {
+        # HTTP Cache - Tempo de cache padrão (1 ano para assets versionados)
+        "CONTROL": os.getenv(
+            'STATIC_CACHE_CONTROL',
+            'public, max-age=31536000, immutable'
+        ),
+        
+        # CORS - Origem permitida para fontes web
+        "CORS_ORIGIN": os.getenv('STATIC_CORS_ORIGIN', '*'),
+    },
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

@@ -46,7 +46,8 @@ fi
 uv run python notificador.py &
 
 if [ "$DEBUG" = "1" ]; then
-    uv run python manage.py runserver 0.0.0.0:8000
+    uv run uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --workers 1 --log-level warning --lifespan off --loop uvloop --http httptools --timeout-keep-alive 5 --use-colors
+    #uv run python manage.py runserver 0.0.0.0:8000
 else
     uv run uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --workers 1 --log-level warning --lifespan off --loop uvloop --http httptools --timeout-keep-alive 5 --use-colors
 fi
