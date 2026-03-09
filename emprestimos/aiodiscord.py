@@ -1,4 +1,4 @@
-import httpx
+import aiohttp
 import asyncio
 from dataclasses import dataclass
 
@@ -15,33 +15,63 @@ class MessageInfo:
     text: str
 
 class DiscordBot:
-    def __init__(self, token, timeout=3):
+    def __init__(self, token, timeout=10):
         if not token:
             raise ValueError("O token do bot é obrigatório.")
         self.token = token
         self.base_url = "https://discord.com/api/v10"
         self.timeout = timeout
+        self._session: aiohttp.ClientSession | None = None
+        self._session_lock = asyncio.Lock()
+
+    async def get_session(self) -> aiohttp.ClientSession:
+        async with self._session_lock:
+            if self._session is None or self._session.closed:
+                self._session = aiohttp.ClientSession(
+                    timeout=aiohttp.ClientTimeout(
+                        connect=2,
+                        sock_read=3,
+                    ),
+                    connector=aiohttp.TCPConnector(
+                        keepalive_timeout=60,
+                        limit_per_host=10,
+                        ttl_dns_cache=300,
+                        use_dns_cache=True,
+                    ),
+                    headers={
+                        "Authorization": f"Bot {self.token}",
+                        "Content-Type": "application/json"
+                    }
+                )
+        return self._session
+
+    async def reset_session(self):
+        async with self._session_lock:
+            if self._session and not self._session.closed:
+                await self._session.connector.close()
+                await self._session.close()
+            self._session = None
 
     async def send_request(self, endpoint, payload):
         url = f"{self.base_url}/{endpoint}"
-        headers = {
-            "Authorization": f"Bot {self.token}",
-            "Content-Type": "application/json"
-        }
-
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, json=payload, headers=headers)
-                data = response.json()
+            session = await self.get_session()
+            async with session.post(url, json=payload) as response:
+                if response.status == 429:
+                    raise RuntimeError("Rate limit atingido")
+                data = await response.json()
                 return DiscordResponse(
-                    success=response.status_code == 200,
-                    result=data if response.status_code == 200 else {},
-                    error_message=data.get("message") if response.status_code != 200 else None
+                    success=response.status in (200, 204),
+                    result=data if response.status in (200, 204) else {},
+                    error_message=data.get("message") if response.status not in (200, 204) else None
                 )
+        except aiohttp.ClientConnectionError:
+            await self.reset_session()
+            raise RuntimeError("Conexão perdida com o Discord")
         except asyncio.TimeoutError:
-            raise TimeoutError("Timeout, a requisição para a API do Discord expirou.")
+            raise TimeoutError("Timeout na requisição para o Discord expirou.")
         except Exception as e:
-            raise RuntimeError(f"Erro inesperado do tipo '{type(e).__name__}': {str(e)}.\n Resposta esperada: {repr(e)}")
+            raise RuntimeError(f"Erro inesperado do tipo '{type(e).__name__}': {str(e)}")
 
     async def send_message(self, chat_id, text, reply_markup=None, reply_to_message_id=None):
         if reply_markup:
@@ -150,18 +180,24 @@ class DiscordBot:
     
     async def delete_message(self, chat_id, message_id):
         url = f"{self.base_url}/channels/{chat_id}/messages/{message_id}"
-        headers = {"Authorization": f"Bot {self.token}"}
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.delete(url, headers=headers)
-                if response.status_code == 204:
-                    return {"ok": True, "description": "Mensagem deletada com sucesso."}
-        except asyncio.TimeoutError:
-            raise TimeoutError("Timeout, a requisição para a API do Discord expirou.")
-        except Exception as e:
-            raise RuntimeError(f"Erro inesperado do tipo '{type(e).__name__}': {str(e)}.\n Resposta esperada: {repr(e)}")
 
-    async def InlineKeyboardButton(self, text="", url=None):
+        for tentativa in range(1, 4):  # 3 tentativas
+            try:
+                session = await self.get_session()
+                async with session.delete(url) as response:
+                    if response.status == 204:
+                        return {"ok": True, "description": "Mensagem deletada com sucesso."}
+            except aiohttp.ClientConnectionError:
+                await self.reset_session()
+                if tentativa == 3:
+                    raise RuntimeError("Conexão perdida com o Discord")
+            except asyncio.TimeoutError:
+                if tentativa == 3:
+                    raise TimeoutError("Timeout na requisição para o Discord expirou.")
+            
+            await asyncio.sleep(tentativa)  # 1s, 2s entre tentativas
+
+    def InlineKeyboardButton(self, text="", url=None):
         # Apenas botões de link (style=5)
         return {
             "type": 2,
@@ -170,19 +206,19 @@ class DiscordBot:
             "url": url
         }
 
-    async def InlineKeyboardMarkup(self, buttons):
+    def InlineKeyboardMarkup(self, buttons):
         # buttons: lista de listas de botões (igual ao Telegram)
         return [{"type": 1, "components": row} for row in buttons]
 
 # Exemplo de uso
 async def main():
-    bot = DiscordBot(token="")
-    chat_id = ""
+    bot = DiscordBot(token="your_discord_token_here")
+    chat_id = "your_channel_id_here"
     # Criando botões de link
-    botao1 = await bot.InlineKeyboardButton(text="Site 1", url="https://site1.com")
-    botao2 = await bot.InlineKeyboardButton(text="Site 2", url="https://site2.com")
+    botao1 = bot.InlineKeyboardButton(text="Site 1", url="https://site1.com")
+    botao2 = bot.InlineKeyboardButton(text="Site 2", url="https://site2.com")
     keyboard = [[botao1, botao2]]
-    markup = await bot.InlineKeyboardMarkup(keyboard)
+    markup = bot.InlineKeyboardMarkup(keyboard)
     #mensagem_botoes = await bot.send_message(chat_id, "Veja os sites:", reply_markup=[])
     
     # Imagem simples

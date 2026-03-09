@@ -3,7 +3,7 @@ import re
 import uvloop
 import asyncio
 import logging
-import httpx
+import aiohttp
 import datetime
 import aiosqlite
 from aiotelegram import TelegramBot
@@ -318,13 +318,13 @@ class Notificador():
             try:
                 health_url = f"{os.getenv('SITE_URL')}health/"
                 logging.warning(f"Verificando saúde do serviço em {health_url}...")
-                async with httpx.AsyncClient() as client:
-                    resp = await client.get(health_url)
-                    if resp.status_code == 200:
-                        logging.warning("Serviço está saudável.")
-                        break
-                    else:
-                        logging.warning(f"Serviço retornou status {resp.status_code}.")
+                async with aiohttp.ClientSession() as client:
+                    async with client.get(health_url) as resp:
+                        if resp.status == 200:
+                            logging.warning("Serviço está saudável.")
+                            break
+                        else:
+                            logging.warning(f"Serviço retornou status {resp.status}.")
             except Exception as e:
                 logging.error(f"Erro ao verificar saúde do serviço: {e}")
             await asyncio.sleep(1)

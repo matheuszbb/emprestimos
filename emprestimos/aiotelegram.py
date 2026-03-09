@@ -33,7 +33,7 @@ class TelegramBot:
                 self._session = aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(
                         connect=2,
-                        sock_read=3,
+                        sock_read=self.timeout,
                     ),
                     connector=aiohttp.TCPConnector(
                         keepalive_timeout=60,  # margem confortável para o intervalo de 3s
