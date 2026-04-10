@@ -260,15 +260,9 @@ class Emprestimo(models.Model):
                 
             original = Emprestimo.objects.get(pk=self.pk)
             
-            if original.valor != self.valor:
-                raise ValidationError("Não é permitido alterar o valor do empréstimo depois da criação.")
-            if original.parcelas != self.parcelas:
-                raise ValidationError("Não é permitido alterar a quantidade de parcelas depois da criação.")
-            if original.porcentagem != self.porcentagem:
-                raise ValidationError("Não é permitido alterar a porcentagem de lucro depois da criação.")
             if original.responsavel != self.responsavel:
                 raise ValidationError("Não é permitido alterar o(a) responsável depois da criação.")
-            if original.cliente != self.cliente:
+            elif original.cliente != self.cliente:
                 raise ValidationError("Não é permitido alterar a cliente depois da criação.")
 
     def save(self, *args, **kwargs):
